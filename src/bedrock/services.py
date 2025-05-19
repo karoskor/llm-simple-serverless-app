@@ -24,20 +24,22 @@ class BedrockClient:
             raise BedrockError(f"Failed to initialize Bedrock client: {str(e)}")
 
     @retry_with_exponential_backoff(max_retries=BedrockConfig.MAX_RETRIES)
-    def invoke_model(self, prompt: str, model_id: Optional[str] = None) -> str:
+    def invoke_model_stream(self, prompt: str, model_id: Optional[str] = None):
         try:
-            response = self.client.invoke_model(
+            response = self.client.invoke_model_with_response_stream(
                 modelId=model_id or BedrockConfig.DEFAULT_MODEL_ID,
                 body=json.dumps({
                     "prompt": f"\n\nHuman: {prompt}\n\nAssistant:",
                     **BedrockConfig.get_model_parameters()
                 })
             )
-            response_body = json.loads(response['body'].read())
-            return response_body.get('completion', '{}')
-        except Exception as e:
-            raise ModelInvocationError(f"Error invoking Bedrock model: {str(e)}")
 
+            for event in response.get('body'):
+                chunk = json.loads(event['chunk']['bytes'].decode())
+                yield chunk.get('completion', '')
+
+        except Exception as e:
+            raise ModelInvocationError(f"Error invoking Bedrock model stream: {str(e)}")
 
 class PromptGenerator:
     """Generates prompts for different use cases"""
@@ -92,12 +94,15 @@ class LearningPlanService:
 
     def generate_plan(self, preferences: UserPreferences) -> LearningPlan:
         prompt = self.prompt_generator.create_learning_plan_prompt(preferences)
-        response = self.bedrock_client.invoke_model(prompt)
 
-        if not self.validator.validate_learning_plan(response):
+        full_response = ""
+        for chunk in self.bedrock_client.invoke_model_stream(prompt):
+            full_response += chunk
+
+        if not self.validator.validate_learning_plan(full_response):
             raise InvalidResponseError("Invalid response format from Bedrock")
 
-        return self._convert_to_learning_plan(response)
+        return self._convert_to_learning_plan(full_response)
 
     def _convert_to_learning_plan(self, response: str) -> LearningPlan:
         try:
