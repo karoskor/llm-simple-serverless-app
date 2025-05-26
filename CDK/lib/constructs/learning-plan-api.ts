@@ -15,7 +15,7 @@ export class LearningPlanApi extends Construct {
     const getLearningPlanFn = new lambda.Function(this, 'GetLearningPlanFunction', {
       functionName: props.lambdaName,
       runtime: lambda.Runtime.NODEJS_18_X,
-      handler: 'get-learning-plan.handler', // fileName.functionName
+      handler: 'get-learning-plan.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/dist')),
     });
 

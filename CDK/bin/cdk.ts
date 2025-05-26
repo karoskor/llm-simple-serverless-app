@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
-import { LeraningPlanStack } from '../lib/stacks/learning-plan-stack';
+import { LearningPlanStack } from '../lib/stacks/learning-plan-stack';
+import { LearningPlanFrontendStack } from '../lib/stacks/frontend-stack';
 
 const app = new cdk.App();
-new LeraningPlanStack(app, 'LearningPlanStack', {
-});
+new LearningPlanStack(app, 'LearningPlanStack', {});
+
+new LearningPlanFrontendStack(app, 'LearningPlanFrontendStack', {});
+import { LearningPlanApi } from '../lib/constructs/learning-plan-api';

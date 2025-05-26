@@ -61,11 +61,36 @@ You should see response similar to this:
 cdk bootstrap
 ```
 
-#### 5. Deploy the learning plan stack
+#### 5. Deploy the learning plan application stacks
 
 ```
-cdk deploy
+cdk deploy --all
 ```
+
+Note the values of the bucket name (BucketNameOutput) and domain of your web application (DistributionDomainName). Example:
+
+```
+LearningPlanFrontendStack.BucketNameOutput = learningplanfrontendstack-learningplanbucket1234-12334
+LearningPlanFrontendStack.DistributionDomainName = https://abcd.cloudfront.net
+```
+
+#### 6. Build frontend code
+
+```sh
+cd ../frontend
+npm install
+npm run build
+```
+
+#### 7. Upload frontend code to the bucket using the bucket name you noted
+
+```sh
+aws s3 sync build/ s3://<bucket_name>
+```
+
+#### 8. Access your website
+
+Your website will be available at the CloudFront domain that you noted in step 5.
 
 ### Useful Links
 
