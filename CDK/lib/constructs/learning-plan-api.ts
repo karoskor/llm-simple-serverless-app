@@ -24,7 +24,8 @@ export class LearningPlanApi extends Construct {
       description: props.apiDescription,
     });
 
-    const getLearningPlan = api.root.addResource('getLearningPlan');
-    getLearningPlan.addMethod('GET', new apigateway.LambdaIntegration(getLearningPlanFn));
+    const learningPlan = api.root.addResource('learning-plan');
+    learningPlan.addMethod('GET', new apigateway.LambdaIntegration(getLearningPlanFn));
+    learningPlan.addMethod('POST', new apigateway.LambdaIntegration(getLearningPlanFn));
   }
 }
