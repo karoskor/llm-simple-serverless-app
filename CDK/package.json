@@ -5,10 +5,10 @@
     "cdk": "bin/cdk.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run build:lambda",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk"
+    "build:lambda": "tsc -p lib/lambda/tsconfig.json"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.149",
@@ -21,6 +21,7 @@
     "typescript": "~5.6.3"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.523.0",
     "aws-cdk-lib": "^2.196.0",
     "constructs": "^10.4.2"
   }

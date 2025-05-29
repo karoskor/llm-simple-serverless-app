@@ -23,6 +23,9 @@ function App() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          // Remove the Origin header if you're testing locally
+          // 'Origin': window.location.origin,
         },
         body: JSON.stringify({
           topic,
@@ -32,10 +35,13 @@ function App() {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', response.status, errorText);
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('API Response:', data);
       setLearningPlan(data);
     } catch (err) {
       console.error('Error fetching learning plan:', err);
