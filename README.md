@@ -61,34 +61,28 @@ You should see response similar to this:
 cdk bootstrap
 ```
 
-#### 5. Deploy the learning plan application stacks
-
-```
-cdk deploy --all
-```
-
-Note the values of the bucket name (BucketNameOutput) and domain of your web application (DistributionDomainName). Example:
-
-```
-LearningPlanFrontendStack.BucketNameOutput = learningplanfrontendstack-learningplanbucket1234-12334
-LearningPlanFrontendStack.DistributionDomainName = https://abcd.cloudfront.net
-```
-
-#### 6. Build frontend code
+#### 5. Build frontend code
 
 ```sh
 cd ../frontend
 npm install
 npm run build
+cd ../CDK
 ```
 
-#### 7. Upload frontend code to the bucket using the bucket name you noted
+#### 6. Deploy the learning plan application stacks
 
-```sh
-aws s3 sync build/ s3://<bucket_name>
+```
+cdk deploy --all
 ```
 
-#### 8. Enable the bedrock model
+Note the CloudFront domain of your web application (DistributionDomainName). Example:
+
+```
+LearningPlanFrontendStack.DistributionDomainName = https://abcd.cloudfront.net
+```
+
+#### 7. Enable the bedrock model
 
 - Navigate to the AWS Console
 - Go to Amazon Bedrock service
@@ -96,7 +90,7 @@ aws s3 sync build/ s3://<bucket_name>
 - Manually toggle the model **Titan Text G1 - Express**
 - Accept the terms and conditions
 
-#### 9. Access your website
+#### 8. Access your website
 
 Your website will be available at the CloudFront domain that you noted in step 5.
 

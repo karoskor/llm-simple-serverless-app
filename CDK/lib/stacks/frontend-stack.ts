@@ -4,6 +4,8 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import { PolicyStatement, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
+import * as path from 'path';
 
 export class LearningPlanFrontendStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -66,6 +68,14 @@ export class LearningPlanFrontendStack extends Stack {
 
     new CfnOutput(this, 'BucketNameOutput', {
       value: websiteBucket.bucketName,
+    });
+    
+    // Deploy the frontend assets to the S3 bucket
+    new s3deploy.BucketDeployment(this, 'DeployWebsite', {
+      sources: [s3deploy.Source.asset(path.join(__dirname, '../../../frontend/build'))],
+      destinationBucket: websiteBucket,
+      distribution: distribution,
+      distributionPaths: ['/*'],
     });
   }
 }
