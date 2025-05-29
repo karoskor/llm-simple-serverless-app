@@ -1,4 +1,4 @@
-import { Stack, StackProps, CfnOutput, RemovalPolicy } from 'aws-cdk-lib';
+import { Stack, StackProps, CfnOutput, RemovalPolicy, CustomResource } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
@@ -6,12 +6,31 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import { PolicyStatement, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as path from 'path';
+import { execSync } from 'child_process';
+import * as fs from 'fs';
+import * as cdk from 'aws-cdk-lib';
+import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from 'aws-cdk-lib/custom-resources';
+
+interface LearningPlanFrontendStackProps extends StackProps {
+  apiEndpoint?: string;
+}
 
 export class LearningPlanFrontendStack extends Stack {
-  constructor(scope: Construct, id: string, props?: StackProps) {
+  constructor(scope: Construct, id: string, props?: LearningPlanFrontendStackProps) {
     super(scope, id, props);
 
     const accountId = Stack.of(this).account;
+    const apiEndpoint = cdk.Fn.importValue('LearningPlanApiEndpoint');
+
+    // Build the frontend
+    console.log('Building the frontend...');
+    try {
+      execSync('cd ../frontend && npm run build', { stdio: 'inherit' });
+      console.log('Frontend build completed successfully');
+    } catch (error) {
+      console.error('Error building frontend:', error);
+      throw error;
+    }
 
     // Create an S3 bucket to host the static website
     const websiteBucket = new s3.Bucket(this, 'LearningPlanBucket', {
@@ -32,7 +51,7 @@ export class LearningPlanFrontendStack extends Stack {
     const distribution = new cloudfront.Distribution(this, 'distro', {
       defaultBehavior: {
         origin: s3Origin,
-        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS, // 1. Redirect HTTP to HTTPS
+        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
       },
       defaultRootObject: 'index.html',
       errorResponses: [
@@ -70,12 +89,45 @@ export class LearningPlanFrontendStack extends Stack {
       value: websiteBucket.bucketName,
     });
     
-    // Deploy the frontend assets to the S3 bucket
-    new s3deploy.BucketDeployment(this, 'DeployWebsite', {
+    // First deploy the frontend assets
+    const deployment = new s3deploy.BucketDeployment(this, 'DeployWebsite', {
       sources: [s3deploy.Source.asset(path.join(__dirname, '../../../frontend/build'))],
       destinationBucket: websiteBucket,
       distribution: distribution,
       distributionPaths: ['/*'],
+      prune: false // This prevents deletion of files not in the source
     });
+
+    // Then create the config.json file after the deployment
+    const configUploader = new AwsCustomResource(this, 'ConfigJsonUploader', {
+      onCreate: {
+        service: 'S3',
+        action: 'putObject',
+        parameters: {
+          Bucket: websiteBucket.bucketName,
+          Key: 'config.json',
+          Body: JSON.stringify({ apiUrl: apiEndpoint }),
+          ContentType: 'application/json'
+        },
+        physicalResourceId: PhysicalResourceId.of('config.json-uploader')
+      },
+      onUpdate: {
+        service: 'S3',
+        action: 'putObject',
+        parameters: {
+          Bucket: websiteBucket.bucketName,
+          Key: 'config.json',
+          Body: JSON.stringify({ apiUrl: apiEndpoint }),
+          ContentType: 'application/json'
+        },
+        physicalResourceId: PhysicalResourceId.of('config.json-uploader')
+      },
+      policy: AwsCustomResourcePolicy.fromSdkCalls({
+        resources: [websiteBucket.arnForObjects('config.json')]
+      })
+    });
+
+    // Add dependency to ensure proper order
+    configUploader.node.addDependency(deployment);
   }
 }

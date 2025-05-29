@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 
 function App() {
@@ -8,18 +8,45 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [learningPlan, setLearningPlan] = useState(null);
   const [error, setError] = useState(null);
+  const [config, setConfig] = useState(null);
+  const [configLoading, setConfigLoading] = useState(true);
 
-  // Get the API URL from environment variables
-  const apiUrl = process.env.REACT_APP_API_URL || '';
+  // Fetch the config.json file on component mount
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const response = await fetch('/config.json');
+        if (!response.ok) {
+          throw new Error(`Failed to load config: ${response.status}`);
+        }
+        const configData = await response.json();
+        console.log('Config loaded:', configData);
+        setConfig(configData);
+      } catch (err) {
+        console.error('Error loading config:', err);
+        setError('Failed to load application configuration. Please try again later.');
+      } finally {
+        setConfigLoading(false);
+      }
+    };
+
+    fetchConfig();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!config || !config.apiUrl) {
+      setError('Application not properly configured. Please try again later.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setLearningPlan(null);
 
     try {
-      const response = await fetch(`${apiUrl}/learning-plan`, {
+      const response = await fetch(`${config.apiUrl}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -50,6 +77,21 @@ function App() {
       setLoading(false);
     }
   };
+
+  if (configLoading) {
+    return (
+      <div className="App">
+        <header className="App-header">
+          <h1>AI Learning Plan Generator</h1>
+        </header>
+        <main>
+          <div className="loading">
+            <p>Loading application configuration...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="App">

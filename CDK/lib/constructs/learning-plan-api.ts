@@ -10,6 +10,8 @@ export interface LearningPlanApiProps {
 }
 
 export class LearningPlanApi extends Construct {
+  public readonly apiEndpoint: string;
+
   constructor(scope: Construct, id: string, props: LearningPlanApiProps) {
     super(scope, id);
 
@@ -88,5 +90,8 @@ export class LearningPlanApi extends Construct {
     });
 
     learningPlan.addMethod('POST', lambdaIntegration);
+    
+    // Store the API endpoint URL
+    this.apiEndpoint = `${api.url}learning-plan`;
   }
 }

@@ -27,10 +27,12 @@ git clone https://github.com/karoskor/llm-simple-serverless-app.git
 cd llm-simple-serverless-app
 ```
 
-#### 2. Install dependencies and build the CDK project
+#### 2. Install dependencies for frontend and CDK
 
-```
-cd CDK
+```sh
+cd frontend
+npm install
+cd ../CDK
 npm install
 npm run build
 ```
@@ -61,20 +63,18 @@ You should see response similar to this:
 cdk bootstrap
 ```
 
-#### 5. Build frontend code
-
-```sh
-cd ../frontend
-npm install
-npm run build
-cd ../CDK
-```
-
-#### 6. Deploy the learning plan application stacks
+#### 5. Deploy the learning plan application stacks
 
 ```
 cdk deploy --all
 ```
+
+The deployment process will:
+1. Deploy the API stack first
+2. Build the frontend application
+3. Create a config.json file with the API endpoint URL
+4. Upload the frontend assets and config.json to the S3 bucket
+5. Configure CloudFront for distribution
 
 Note the CloudFront domain of your web application (DistributionDomainName). Example:
 
@@ -82,7 +82,7 @@ Note the CloudFront domain of your web application (DistributionDomainName). Exa
 LearningPlanFrontendStack.DistributionDomainName = https://abcd.cloudfront.net
 ```
 
-#### 7. Enable the bedrock model
+#### 6. Enable the bedrock model
 
 - Navigate to the AWS Console
 - Go to Amazon Bedrock service
@@ -90,14 +90,42 @@ LearningPlanFrontendStack.DistributionDomainName = https://abcd.cloudfront.net
 - Manually toggle the model **Titan Text G1 - Express**
 - Accept the terms and conditions
 
-#### 8. Access your website
+#### 7. Access your website
 
-Your website will be available at the CloudFront domain that you noted in step 5.
+Your website will be available at the CloudFront domain that you noted in step 5. The frontend is automatically deployed to S3 and distributed through CloudFront as part of the CDK deployment process.
+
+### Architecture Overview
+
+This application consists of three main components:
+
+1. **Frontend (React)**: A simple web interface hosted on S3 and distributed via CloudFront
+2. **API Gateway + Lambda**: Processes requests and communicates with Amazon Bedrock
+3. **Amazon Bedrock**: Generates personalized learning plans using the Titan Text model
+
+### Runtime Configuration
+
+The application uses a runtime configuration approach:
+
+1. A custom resource in the CDK stack creates a config.json file with the API endpoint URL
+2. This file is uploaded to the S3 bucket during deployment
+3. When the frontend loads, it fetches this configuration file first
+4. The API URL from the config file is then used for all API calls
+
+This approach allows the frontend to be configured without rebuilding it if the API endpoint changes.
+
+### Troubleshooting
+
+If you encounter issues with the deployment:
+
+- Ensure you have enabled the Titan Text G1 - Express model in Amazon Bedrock
+- Check CloudWatch Logs for any Lambda function errors
+- Verify that your AWS CLI credentials have sufficient permissions
 
 ### Useful Links
 
 - [AWS CDK Documentation](https://docs.aws.amazon.com/cdk/v2/guide/home.html)
 - [TypeScript Documentation](https://www.typescriptlang.org/docs/)
 - [AWS Free Tier](https://aws.amazon.com/free/)
+- [Amazon Bedrock Documentation](https://docs.aws.amazon.com/bedrock/)
 
 ---
