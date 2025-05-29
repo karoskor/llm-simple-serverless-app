@@ -88,7 +88,15 @@ npm run build
 aws s3 sync build/ s3://<bucket_name>
 ```
 
-#### 8. Access your website
+#### 8. Enable the bedrock model
+
+- Navigate to the AWS Console
+- Go to Amazon Bedrock service
+- Select "Model access" from the left navigation
+- Manually toggle the model **Titan Text G1 - Express**
+- Accept the terms and conditions
+
+#### 9. Access your website
 
 Your website will be available at the CloudFront domain that you noted in step 5.
 
