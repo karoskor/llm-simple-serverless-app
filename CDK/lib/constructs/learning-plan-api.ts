@@ -1,6 +1,6 @@
 import { Construct } from 'constructs';
-import { aws_lambda as lambda, aws_apigateway as apigateway, Duration } from 'aws-cdk-lib';
-import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { aws_lambda as lambda, aws_apigateway as apigateway, Duration, aws_iam as iam, aws_logs as logs } from 'aws-cdk-lib';
+import { Effect, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import * as path from 'path';
 
 export interface LearningPlanApiProps {
@@ -37,6 +37,15 @@ export class LearningPlanApi extends Construct {
       })
     );
 
+    // Create a role for API Gateway CloudWatch logging with proper trust relationship
+    const apiGatewayLoggingRole = new Role(this, 'ApiGatewayLoggingRole', {
+      assumedBy: new ServicePrincipal('apigateway.amazonaws.com'),
+      description: 'Role for API Gateway to push logs to CloudWatch',
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonAPIGatewayPushToCloudWatchLogs')
+      ]
+    });
+
     const api = new apigateway.RestApi(this, 'LearningPlanApi', {
       restApiName: props.apiName,
       description: props.apiDescription,
@@ -58,21 +67,26 @@ export class LearningPlanApi extends Construct {
         tracingEnabled: true, // Enable X-Ray tracing
         loggingLevel: apigateway.MethodLoggingLevel.INFO,
         dataTraceEnabled: true,
-        metricsEnabled: true
+        metricsEnabled: true,
+        accessLogDestination: new apigateway.LogGroupLogDestination(
+          new logs.LogGroup(this, 'ApiGatewayAccessLogs')
+        ),
+        accessLogFormat: apigateway.AccessLogFormat.jsonWithStandardFields()
       }
     });
 
+    // Set the CloudWatch role ARN on the account
+    new apigateway.CfnAccount(this, 'ApiGatewayAccount', {
+      cloudWatchRoleArn: apiGatewayLoggingRole.roleArn
+    });
 
     const learningPlan = api.root.addResource('learning-plan');
 
     // Add Lambda integration with CORS enabled
-    // In CDK/lib/constructs/learning-plan-api.ts
     const lambdaIntegration = new apigateway.LambdaIntegration(getLearningPlanFn, {
       timeout: Duration.seconds(29) // Maximum API Gateway timeout
     });
 
-
     learningPlan.addMethod('POST', lambdaIntegration);
-
   }
 }
