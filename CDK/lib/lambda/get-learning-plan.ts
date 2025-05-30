@@ -69,7 +69,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       "topic": "${topic}",
       "difficulty": "${difficulty}",
       "duration": "${timeframe}",
-      "weeks": [{"week": 1, "focus": "", "activities": [{"name": "", "description": "", "resources": []}]}],
+      "weeks": [{"week": 1, "focus": "", "activities": [{"name": "", "description": "", "resources": [{"name": "", "type": "", "url": ""}]}]}],
       "resources": [{"name": "", "type": "", "url": ""}]
     \`\`\`
     Include ${timeframe.includes('week') ? timeframe.split(' ')[0] : '4'} weeks of content.

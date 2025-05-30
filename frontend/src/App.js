@@ -176,11 +176,17 @@ function App() {
                       {activity.resources && activity.resources.length > 0 && (
                         <div className="activity-resources">
                           <strong>Resources:</strong>
-                          <ul>
-                            {activity.resources.map((resource, i) => (
-                              <li key={i}>{resource}</li>
+                          <ul className="resources-list">
+                            {activity.resources.map((resource, index) => (
+                              <li key={index} className="resource-item">
+                                <strong>{resource.name}</strong> ({resource.type})
+                                {resource.url && (
+                                  <a href={resource.url} target="_blank" rel="noopener noreferrer">
+                                    {resource.url}
+                                  </a>
+                                )}
+                              </li>
                             ))}
-
                           </ul>
                         </div>
                       )}
