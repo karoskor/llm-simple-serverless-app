@@ -48,7 +48,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       // Validate required fields
       if (!topic || !difficulty || !timeframe) {
         return {
-          statusCode: 400, 
+          statusCode: 400,
           headers,
           body: JSON.stringify({ error: 'Missing required fields: topic, difficulty, timeframe' })
         };
@@ -87,16 +87,19 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       const response = await Promise.race([
         bedrockClient.send(
           new InvokeModelCommand({
-            modelId: 'amazon.titan-text-express-v1',
+            modelId: 'anthropic.claude-3-5-sonnet-20240620-v1:0',
             contentType: 'application/json',
             accept: 'application/json',
             body: JSON.stringify({
-              inputText: prompt,
-              textGenerationConfig: {
-                maxTokenCount: 1500,
-                temperature: 0.4,    // Slightly higher for faster responses
-                topP: 0.8,           // Slightly lower for more focused responses
-              }
+              anthropic_version: "bedrock-2023-05-31",
+              max_tokens: 2048,
+              temperature: 0.1,
+              messages: [
+                {
+                  role: "user",
+                  content: prompt
+                }
+              ]
             }),
           })
         ),
@@ -117,15 +120,14 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         resources: []
       };
 
-      const outputText = responseBody.results?.[0]?.outputText || '';
-
       try {
         // Try direct parsing first
-        learningPlan = JSON.parse(outputText.trim());
+        const responseText = responseBody.content?.[0]?.text || '';
+        learningPlan = JSON.parse(responseText.trim());
       } catch (directParseError) {
         // Fall back to regex extraction if needed
         try {
-          const jsonMatch = outputText.match(/\{[\s\S]*\}/);
+          const jsonMatch = responseBody.content?.[0]?.text.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
             learningPlan = JSON.parse(jsonMatch[0]);
           }
@@ -151,20 +153,20 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             topic,
             difficulty,
             duration: timeframe,
-            weeks: [{ 
-              week: 1, 
-              focus: 'Getting Started', 
-              activities: [{ 
-                name: 'Introduction', 
-                description: `Learn the basics of ${topic}`, 
-                resources: [] 
-              }] 
+            weeks: [{
+              week: 1,
+              focus: 'Getting Started',
+              activities: [{
+                name: 'Introduction',
+                description: `Learn the basics of ${topic}`,
+                resources: []
+              }]
             }],
             resources: []
           })
         };
       }
-      
+
       throw error; // Re-throw for the outer catch block
     }
   } catch (error) {
