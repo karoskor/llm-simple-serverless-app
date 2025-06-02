@@ -87,7 +87,7 @@ LearningPlanFrontendStack.DistributionDomainName = https://abcd.cloudfront.net
 - Navigate to the AWS Console
 - Go to Amazon Bedrock service
 - Select "Model access" from the left navigation
-- Manually toggle the model **Titan Text G1 - Express**
+- Manually toggle the model **Claude 3.5 Sonnet**
 - Accept the terms and conditions
 
 #### 7. Access your website
@@ -117,9 +117,12 @@ This approach allows the frontend to be configured without rebuilding it if the 
 
 If you encounter issues with the deployment:
 
-- Ensure you have enabled the Titan Text G1 - Express model in Amazon Bedrock
+- Ensure you have enabled the Claude 3.5 Sonnet model in Amazon Bedrock
 - Check CloudWatch Logs for any Lambda function errors
 - Verify that your AWS CLI credentials have sufficient permissions
+
+
+#### This architecture uses free tier AWS resources, this is not production ready application. When you finish working with the application it is a good practice to remove your resources to avoid generating any costs.
 
 ### Useful Links
 
